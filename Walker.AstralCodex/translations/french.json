@@ -1,0 +1,37 @@
+{
+	"$schema": "https://raw.githubusercontent.com/Outer-Wilds-New-Horizons/new-horizons/main/NewHorizons/Schemas/translation_schema.json",
+    "DialogueDictionary" :
+    {
+        "Have you noticed the sky's green?": "As-tu remarqué que le ciel est vert?",
+        "Did you know there's a laser pointed at your head?": "Sais-tu qu'il y a un laser pointé vers ta tête?",
+        "Did your campfire really fly off?": "Ton feu de camp s'est-il vraiment envolé?",
+
+        // Have you noticed the sky's green?
+        "It looks perfectly normal to me.": "Il me semble parfaitement normal.",
+        "Are you sure you're alright? I know Chert and Riebeck both got a little green around the gills before takeoff. But never like this."
+        : "T'es sûr que tu vas bien? Je sais que Chert et Riebeck ont eu les yeux un peu verts avant le décollage. Mais jamais comme ça.",
+        
+        // Did you know there's a laser pointed at your head?
+        "Like I'm being scanned or something? <![CDATA[<i>Creepy</i>]]>...": "Comme si j'étais scanné ou quelque chose comme ça? C'est <![CDATA[<i>effrayant</i>]]>...",
+        "I haven't heard that ghost story before, Hatchling. I'll have to use it on Hornfels sometime.": "",
+
+        // Campfire
+        "Sure did. Spookiest thing I've ever seen. It just up and lifted off into the sky all on its own.": "",
+        "I wonder where it could be now.": "",
+
+        "I found it.": "",
+
+        "You found it! Where!?": "",
+
+        "In an invisible alien spacecraft below the sun.": "",
+
+        "Okay. Now I know you're pulling my leg.": ""
+    },
+    "ShipLogDictionary" :
+    {
+    },
+    "UIDictionary" :
+    {
+        "Lingering Chime": "Carillon Persistant"
+    }
+}
