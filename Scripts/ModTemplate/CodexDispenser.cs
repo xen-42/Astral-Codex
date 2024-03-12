@@ -16,12 +16,13 @@ namespace AstralCodex
     internal class CodexDispenser : MonoBehaviour
     {
         const string AnimatorState = "DispenseCodec";
-        const string CoreActivatedCondition = "CODEX_ACTIVATED_CORE";
 
         bool active = false;
         bool startedScalingCore = false;
         bool coreScaled = false;
         bool animationStarted = false;
+        bool complete = false;
+        bool startedDispensing = false;
 
         //Timing information
         float totalDuration = 57.5f; //68; //Total duration of the animation
@@ -31,6 +32,8 @@ namespace AstralCodex
 
         float coreMaxScale = 1;
         float coreScaleSpeed = 0.5f;
+
+        float minRemainingTime = 90; //The maximum time that will be added to the end of the time loop when the player starts getting the Codec
 
         SurveyorProbe probe;
         Light[] probeLights;
@@ -82,9 +85,12 @@ namespace AstralCodex
             probePrompt.enabled = false;
             coreComputer.ClearAllEntries();
 
-            //Restore previous state
-            if (PlayerData.GetPersistentCondition(CoreActivatedCondition))
-                Activate();
+            //If codec has already been downloaded, only display final message
+            if (PlayerData._currentGameSave.shipLogFactSaves.ContainsKey("codex_astral_codex_fact") && PlayerData._currentGameSave.shipLogFactSaves["codex_astral_codex_fact"].revealOrder > -1)
+            {
+                complete = true;
+                coreComputer.DisplayEntry(4);
+            }
         }
 
         void Update()
@@ -93,47 +99,75 @@ namespace AstralCodex
             if (Main.debugMode)
             {
                 if (Keyboard.current.lKey.isPressed && Keyboard.current.uKey.wasPressedThisFrame)
-                    Activate();
+                    SetActive(true);
             }
 
             //Activate
-            if (!active)
+            if (!complete && !startedDispensing)
             {
-                if (sunWire.on && populationWire.on && technologyWire.on)
+                if (!active)
                 {
-                    Activate();
-                }
-            }
-            else if (!startedScalingCore)
-            {
-                //Wait for player to translate computer before activating core
-                if (!translator.IsEquipped())
-                {
-                    bool computerTranslated = true;
-                    for (int i = 1; i <= 3; i++)
+                    //Turn on
+                    if (sunWire.on && populationWire.on && technologyWire.on)
                     {
-                        if (!coreComputer._dictNomaiTextData[i].IsTranslated)
-                        {
-                            computerTranslated = false;
-                            break;
-                        }
+                        SetActive(true);
                     }
-                    if (computerTranslated)
+                }
+                else
+                {
+                    //Turn back off
+                    if (!sunWire.on || !populationWire.on || !technologyWire.on)
                     {
-                        coreComputer.ClearAllEntries();
-                        StartCoroutine(ScaleCore());
+                        SetActive(false);
+                    }
+                    //Start dispensing
+                    else if (!startedScalingCore)
+                    {
+                        //Wait for player to translate computer before activating core
+                        if (!translator.IsEquipped())
+                        {
+                            bool computerTranslated = true;
+                            for (int i = 1; i <= 3; i++)
+                            {
+                                if (!coreComputer._dictNomaiTextData[i].IsTranslated)
+                                {
+                                    computerTranslated = false;
+                                    break;
+                                }
+                            }
+                            if (computerTranslated)
+                            {
+                                coreComputer.ClearAllEntries();
+                                startedDispensing = true;
+
+                                //Make sure there is enough time left in the loop
+                                if (TimeLoop.GetSecondsRemaining() < minRemainingTime)
+                                    TimeLoop.SetSecondsRemaining(minRemainingTime);
+
+                                StartCoroutine(ScaleCore());
+                            }
+                        }
                     }
                 }
             }
         }
 
-        void Activate()
+        void SetActive(bool value)
         {
-            active = true;
-            PlayerData.SetPersistentCondition(CoreActivatedCondition, true);
-            coreComputer.DisplayEntry(1);
-            coreComputer.DisplayEntry(2);
-            coreComputer.DisplayEntry(3);
+            active = value;
+
+            if (value)
+            {
+                coreComputer.DisplayEntry(1);
+                coreComputer.DisplayEntry(2);
+                coreComputer.DisplayEntry(3);
+            }
+            else
+            {
+                coreComputer.ClearEntry(1);
+                coreComputer.ClearEntry(2);
+                coreComputer.ClearEntry(3);
+            }
 
             //Update material properties
             int propertyValueIndex = active ? 0 : 1;
@@ -236,14 +270,11 @@ namespace AstralCodex
             //Play the addendum particles
             addendumParticles.Play();
 
-            //Wait for the player to interact with the dialogue
-            yield return new WaitUntil(() => addendumDialogueInteractReceiver._hasInteracted);
+            //Wait for the player to have the astral codec ship log
+            yield return new WaitUntil(() => PlayerData._currentGameSave.shipLogFactSaves.ContainsKey("codex_astral_codex_fact") && PlayerData._currentGameSave.shipLogFactSaves["codex_astral_codex_fact"].revealOrder > -1);
 
-            //Wait for the player to stop interacting with the dialogue
-            yield return new WaitUntil(() => !addendumDialogueInteractReceiver._hasInteracted);
-
-            //Disable the dialogue trigger
-            addendumDialogueTrigger.SetActive(false);
+            //Disable the dialogue trigger's collider
+            addendumDialogueTrigger.GetComponent<Collider>().enabled = false;
 
             //Stop the addendum particles
             addendumParticles.Stop();
